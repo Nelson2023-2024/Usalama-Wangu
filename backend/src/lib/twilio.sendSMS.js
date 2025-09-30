@@ -32,7 +32,7 @@ This alert was triggered from Usalama Wangu.`;
     const message = await client.messages.create({
       body: messageBody,
       from: ENV.TWILIO_FROM_NUMBER,
-      to: ENV.TWILIO_TO_PHONE_NUMBER,
+      to: ENV.TWILIO_TO_NUMBER,
     });
 
     console.log("SMS sent successfully:", message.sid);
@@ -54,7 +54,7 @@ This alert was triggered from Usalama Wangu.`;
     // Save failed SMS record
     await SMS.create({
       alertId,
-      to: ENV.TWILIO_TO_PHONE_NUMBER,
+      to: ENV.TWILIO_TO_NUMBER,
       from: ENV.TWILIO_FROM_NUMBER,
       messageBody,
       status: "failed",

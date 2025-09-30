@@ -299,94 +299,95 @@ const EmergencyButtonScreen = () => {
     }
   };
 
-  const sendEmergencyAlert = async (audioUri: string | null) => {
-    setIsSending(true);
+const sendEmergencyAlert = async (audioUri: string | null) => {
+  setIsSending(true);
 
-    try {
-      const emergencyData = {
-        timestamp: new Date().toISOString(),
-        location: location
-          ? {
-              latitude: location.latitude,
-              longitude: location.longitude,
-              address: await getAddressFromCoords(
-                location.latitude,
-                location.longitude
-              ),
-            }
-          : null,
-        hasAudio: !!audioUri,
-        alertType: "emergency_panic_button",
-      };
+  try {
+    const formData = new FormData();
+    
+    // Add location data
+    if (location) {
+      formData.append('latitude', location.latitude.toString());
+      formData.append('longitude', location.longitude.toString());
+      formData.append('accuracy', (location.accuracy || 0).toString());
+      
+      const address = await getAddressFromCoords(
+        location.latitude,
+        location.longitude
+      );
+      formData.append('address', address);
+    }
+    
+    // Add alert metadata
+    formData.append('timestamp', new Date().toISOString());
+    formData.append('alertType', 'emergency_panic_button');
+    
+    // Add audio file if available - FIXED FORMAT FOR REACT NATIVE
+    if (audioUri) {
+      // React Native requires this specific object format for file uploads
+      formData.append('audio', {
+        uri: audioUri,
+        type: 'audio/m4a', // Match the file type from expo-av recording
+        name: 'emergency_audio.m4a',
+      } as any);
+      formData.append('hasAudio', 'true');
+    } else {
+      formData.append('hasAudio', 'false');
+    }
 
-      // Convert audio to base64 if available
-      let audioBase64 = null;
-      if (audioUri) {
-        try {
-          audioBase64 = await FileSystem.readAsStringAsync(audioUri, {
-            encoding: "base64",
-          });
-        } catch (error) {
-          console.error("Error converting audio to base64:", error);
-        }
-      }
+    // Send to your backend
+    const response = await fetch("http://192.168.0.101:4000/api/alert/", {
+      method: "POST",
+      headers: {
+        // React Native handles multipart/form-data automatically
+        // Don't set Content-Type header - let it be set automatically with boundary
+      },
+      body: formData,
+    });
 
-      // Send to your backend
-      const response = await fetch("http://192.168.0.101:4000/api/emergency", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...emergencyData,
-          audioData: audioBase64,
-        }),
-      });
-
-      if (response.ok) {
-        Alert.alert(
-          "Emergency Alert Sent",
-          `Your emergency contacts have been notified and authorities are being alerted.${
-            recordedAudioUri
-              ? "\n\nYou can now play back the recorded audio."
-              : ""
-          }`,
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                // Don't reset everything - keep the recorded audio for playback
-                setIsSending(false);
-              },
-            },
-          ]
-        );
-      } else {
-        throw new Error("Failed to send emergency alert");
-      }
-    } catch (error) {
-      console.error("Error sending emergency alert:", error);
+    if (response.ok) {
       Alert.alert(
-        "Error",
-        "Failed to send emergency alert. Please try calling emergency services directly.",
+        "Emergency Alert Sent",
+        `Your emergency contacts have been notified and authorities are being alerted.${
+          recordedAudioUri
+            ? "\n\nYou can now play back the recorded audio."
+            : ""
+        }`,
         [
           {
-            text: "Call Emergency",
+            text: "OK",
             onPress: () => {
-              // In a real app, use Linking.openURL("tel:999") or appropriate emergency number
-              console.log("Would call emergency services");
+              setIsSending(false);
             },
-          },
-          {
-            text: "Retry",
-            onPress: () => sendEmergencyAlert(audioUri),
           },
         ]
       );
-    } finally {
-      setIsSending(false);
+    } else {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to send emergency alert");
     }
-  };
+  } catch (error) {
+    console.error("Error sending emergency alert:", error);
+    Alert.alert(
+      "Error",
+      "Failed to send emergency alert. Please try calling emergency services directly.",
+      [
+        {
+          text: "Call Emergency",
+          onPress: () => {
+            console.log("Would call emergency services");
+          },
+        },
+        {
+          text: "Retry",
+          onPress: () => sendEmergencyAlert(audioUri),
+        },
+      ]
+    );
+  } finally {
+    setIsSending(false);
+  }
+};
 
   const getAddressFromCoords = async (latitude: number, longitude: number) => {
     try {
