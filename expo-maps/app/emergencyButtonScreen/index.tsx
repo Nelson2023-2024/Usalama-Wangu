@@ -47,11 +47,17 @@ const EmergencyButtonScreen = () => {
 
   // Handle emergency button press
   const handleEmergencyPress = async () => {
+    console.log("=== Emergency Button Pressed ===");
+    console.log("Has audio permissions:", hasPermissions);
+    
     setIsEmergencyActive(true);
     const recordingStarted = await startRecording();
+    
+    console.log("Recording started:", recordingStarted);
 
     // If recording failed, send alert without audio
     if (!recordingStarted) {
+      console.log("Recording failed, sending alert without audio");
       await sendEmergencyAlert({
         location,
         audioUri: null,
@@ -63,15 +69,21 @@ const EmergencyButtonScreen = () => {
   // Auto-send when recording finishes
   React.useEffect(() => {
     if (isEmergencyActive && !isRecording && recordingCountdown === 0) {
+      console.log("=== Recording Complete - Auto-sending ===");
+      console.log("Recorded audio URI:", recordedAudioUri);
       handleStopRecordingAndSend();
     }
   }, [isRecording, recordingCountdown, isEmergencyActive]);
 
   const handleStopRecordingAndSend = async () => {
+    console.log("=== Stopping Recording and Sending ===");
     const audioUri = await stopRecording();
+    console.log("Audio URI from stopRecording:", audioUri);
+    console.log("Recorded audio URI state:", recordedAudioUri);
+    
     await sendEmergencyAlert({
       location,
-      audioUri,
+      audioUri: audioUri || recordedAudioUri, // Use either the returned URI or state
       getAddressFromCoords,
     });
   };

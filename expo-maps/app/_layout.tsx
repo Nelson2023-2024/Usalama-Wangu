@@ -3,7 +3,9 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 export default function RootLayout() {
   return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: "black" }}>
+    <Tabs
+      screenOptions={{ tabBarActiveTintColor: "black", headerShown: false }}
+    >
       <Tabs.Screen
         name="index"
         options={{
@@ -15,7 +17,7 @@ export default function RootLayout() {
         }}
       />
       <Tabs.Screen
-        name="emergencyButtonScreen"
+        name="emergencyButtonScreen/index"
         options={{
           headerShown: false,
           title: "Emergency",

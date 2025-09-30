@@ -9,12 +9,14 @@ export const useAudioRecording = () => {
   const [recordedAudioUri, setRecordedAudioUri] = useState<string | null>(null);
   const [hasPermissions, setHasPermissions] = useState(false);
   const countdownRef = useRef<number | null>(null);
+  const recordingRef = useRef<Audio.Recording | null>(null);
 
   // Setup permissions on mount
   useEffect(() => {
     const setupPermissions = async () => {
       try {
         const perm = await Audio.requestPermissionsAsync();
+        console.log("Audio permission status:", perm.status);
         if (perm.status === "granted") {
           setHasPermissions(true);
           await Audio.setAudioModeAsync({
@@ -41,6 +43,7 @@ export const useAudioRecording = () => {
         setRecordingCountdown(recordingCountdown - 1);
       }, 1000);
     } else if (recordingCountdown === 0 && isRecording) {
+      console.log("Countdown reached 0, stopping recording");
       stopRecording();
     }
 
@@ -68,7 +71,10 @@ export const useAudioRecording = () => {
 
   const startRecording = async () => {
     try {
+      console.log("=== Starting Recording ===");
+      
       if (!hasPermissions) {
+        console.log("No permissions, requesting...");
         const perm = await Audio.requestPermissionsAsync();
         if (perm.status !== "granted") {
           Alert.alert(
@@ -84,11 +90,14 @@ export const useAudioRecording = () => {
         });
       }
 
-      const { recording } = await Audio.Recording.createAsync(
+      console.log("Creating recording...");
+      const { recording: newRecording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
 
-      setRecording(recording);
+      console.log("Recording created successfully");
+      setRecording(newRecording);
+      recordingRef.current = newRecording;
       setIsRecording(true);
       setRecordingCountdown(30);
       return true;
@@ -104,32 +113,49 @@ export const useAudioRecording = () => {
 
   const stopRecording = async () => {
     try {
+      console.log("=== Stopping Recording ===");
       let audioUri = null;
 
-      if (recording) {
-        setRecording(null);
-        await recording.stopAndUnloadAsync();
-        audioUri = recording.getURI();
+      const currentRecording = recordingRef.current || recording;
+
+      if (currentRecording) {
+        console.log("Recording exists, stopping...");
+        
+        await currentRecording.stopAndUnloadAsync();
+        audioUri = currentRecording.getURI();
+        
+        console.log("Recording stopped, URI:", audioUri);
+        
         setRecordedAudioUri(audioUri);
+        setRecording(null);
+        recordingRef.current = null;
+      } else {
+        console.log("No recording to stop");
       }
 
       setIsRecording(false);
       return audioUri;
     } catch (error) {
       console.error("Error stopping recording:", error);
+      setIsRecording(false);
       return null;
     }
   };
 
   const resetRecording = async () => {
-    if (recording) {
+    console.log("=== Resetting Recording ===");
+    const currentRecording = recordingRef.current || recording;
+    
+    if (currentRecording) {
       try {
-        setRecording(null);
-        await recording.stopAndUnloadAsync();
+        await currentRecording.stopAndUnloadAsync();
       } catch (error) {
         console.error("Error stopping recorder:", error);
       }
     }
+    
+    setRecording(null);
+    recordingRef.current = null;
     setIsRecording(false);
     setRecordingCountdown(30);
     setRecordedAudioUri(null);

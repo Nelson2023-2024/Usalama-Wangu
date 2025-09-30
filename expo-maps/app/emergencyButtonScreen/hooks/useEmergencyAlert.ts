@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 import * as Location from "expo-location";
 
 interface SendAlertParams {
@@ -16,6 +16,12 @@ export const useEmergencyAlert = () => {
     audioUri,
     getAddressFromCoords,
   }: SendAlertParams) => {
+    console.log("=== Sending Emergency Alert ===");
+    console.log("Location:", location);
+    console.log("Audio URI:", audioUri);
+    console.log("Audio URI type:", typeof audioUri);
+    console.log("Has audio:", !!audioUri);
+    
     setIsSending(true);
 
     try {
@@ -40,23 +46,45 @@ export const useEmergencyAlert = () => {
 
       // Add audio file if available
       if (audioUri) {
-        formData.append("audio", {
-          uri: audioUri,
-          type: "audio/m4a",
-          name: "emergency_audio.m4a",
-        } as any);
+        console.log("Adding audio to FormData...");
+        
+        // Get file extension from URI
+        const uriParts = audioUri.split('.');
+        const fileType = uriParts[uriParts.length - 1];
+        
+        // Create proper file object for React Native
+        const audioFile = {
+          uri: Platform.OS === 'ios' ? audioUri.replace('file://', '') : audioUri,
+          type: `audio/${fileType === 'm4a' ? 'x-m4a' : fileType}`,
+          name: `emergency_audio_${Date.now()}.${fileType}`,
+        };
+
+        console.log("Audio file object:", audioFile);
+        
+        formData.append("audio", audioFile as any);
         formData.append("hasAudio", "true");
       } else {
+        console.log("No audio URI provided");
         formData.append("hasAudio", "false");
       }
+
+      console.log("Sending request to server...");
 
       // Send to backend
       const response = await fetch("http://192.168.0.101:4000/api/alert/", {
         method: "POST",
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
         body: formData,
       });
 
+      console.log("Response status:", response.status);
+
       if (response.ok) {
+        const responseData = await response.json();
+        console.log("Success response:", responseData);
+        
         Alert.alert(
           "Emergency Alert Sent",
           `Your emergency contacts have been notified and authorities are being alerted.${
@@ -74,6 +102,7 @@ export const useEmergencyAlert = () => {
         return true;
       } else {
         const errorData = await response.json();
+        console.log("Error response:", errorData);
         throw new Error(errorData.message || "Failed to send emergency alert");
       }
     } catch (error) {

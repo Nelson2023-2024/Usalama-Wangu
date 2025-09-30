@@ -40,7 +40,7 @@ This alert was triggered from Usalama Wangu.`;
     // Save SMS record to database
     const smsRecord = await SMS.create({
       alertId,
-      to: ENV.TWILIO_TO_PHONE_NUMBER,
+      to: ENV.TWILIO_TO_NUMBER,
       from: ENV.TWILIO_FROM_NUMBER,
       messageBody,
       status: "sent",
