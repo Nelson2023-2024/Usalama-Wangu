@@ -13,4 +13,7 @@ export const ENV = {
   AWS_ACCESS_KEY: "",
   AWS_SECRET_KEY: "",
   AWS_REGION: "",
+  SAS_TOKEN: process.env.SAS_TOKEN,
+  STORAGE_ACCOUNT_NAME: process.env.STORAGE_ACCOUNT_NAME,
+  CONTAINER_NAME: process.env.CONTAINER_NAME,
 };
