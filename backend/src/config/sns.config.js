@@ -1,5 +1,6 @@
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 import { ENV } from "./env.config.js";
+import { SMS } from "../models/SMS.model.js";
 
 const sns = new SNSClient({
   region: ENV.AWS_REGION,
@@ -9,17 +10,76 @@ const sns = new SNSClient({
   },
 });
 
-export async function sendEmergencySMS(phoneNumber, message) {
-  const command = new PublishCommand({
-    Message: message,
-    PhoneNumber: phoneNumber,
-    MessageAttributes: {
-      "AWS.SNS.SMS.SenderID": {
-        DataType: "String",
-        StringValue: "UsalamaApp", // Customize sender ID
-      },
-    },
-  });
+export async function sendEmergencySMS(
+  alertId,
+  latitude,
+  longitude,
+  address,
+  audioUrl,
+  userName = null
+) {
+  // Create SMS message body
+  const messageBody = `🚨 EMERGENCY ALERT 🚨
 
-  return await sns.send(command)
+${userName || "A registered user"} is in immediate danger!
+
+📍 Location: ${address || "Unknown address"}
+🌍 Coordinates: Latitude: ${latitude}, Longitude: ${longitude}
+🗺️ Google Maps: https://maps.google.com/?q=${latitude},${longitude}
+
+🎤 Audio Recording: ${audioUrl}
+
+⚠️ Please take immediate action — contact them and notify emergency services. 
+This alert was triggered from Usalama Wangu.`;
+
+  const toPhoneNumber = ENV.AWS_SNS_TO_PHONE_NUMBER;
+
+  try {
+    //send SMS via AWS SNS
+    const command = new PublishCommand({
+      Message: message,
+      PhoneNumber: toPhoneNumber,
+      TopicArn: ENV.AWS_SNS_TOPIC_ARN,
+      MessageAttributes: {
+        "AWS.SNS.SMS.SenderID": {
+          DataType: "String",
+          StringValue: "UsalamaApp",
+        },
+        "AWS.SNS.SMS.SMS.Type": {
+          DataType: "String",
+          StringValue: "Transactional", // Use "Transactional" for critical alerts
+        },
+      },
+    });
+
+    const response = await sns.send(command);
+    console.log("SNS SMS sent successfully:", response.MessageId);
+
+    //save SMS record to DB
+
+    const smsRecord = await SMS.create({
+      alertId,
+      to: toPhoneNumber,
+      from: "UsalamaApp",
+      messageBody,
+      status: "sent",
+      snsMessageId: response.MessageId,
+    });
+
+    return smsRecord;
+  } catch (error) {
+    console.error("Error sending SNS SMS:", error.message);
+
+    // Save failed SMS record
+    await SMS.create({
+      alertId,
+      to: toPhoneNumber,
+      from: "UsalamaApp",
+      messageBody,
+      status: "failed",
+      errorMessage: error.message,
+    });
+
+    throw error;
+  }
 }
