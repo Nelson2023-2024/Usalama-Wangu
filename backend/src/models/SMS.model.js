@@ -25,8 +25,8 @@ const smsSchema = new mongoose.Schema(
       enum: ["sent", "failed", "pending"],
       default: "pending",
     },
-    twilioSid: {
-      type: String, // Twilio message SID for tracking
+    snsMessageId: {
+      type: String, // AWS SNS message ID for tracking
     },
     errorMessage: {
       type: String,

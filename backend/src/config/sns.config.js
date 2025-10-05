@@ -37,19 +37,8 @@ This alert was triggered from Usalama Wangu.`;
   try {
     //send SMS via AWS SNS
     const command = new PublishCommand({
-      Message: message,
-      PhoneNumber: toPhoneNumber,
-      TopicArn: ENV.AWS_SNS_TOPIC_ARN,
-      MessageAttributes: {
-        "AWS.SNS.SMS.SenderID": {
-          DataType: "String",
-          StringValue: "UsalamaApp",
-        },
-        "AWS.SNS.SMS.SMS.Type": {
-          DataType: "String",
-          StringValue: "Transactional", // Use "Transactional" for critical alerts
-        },
-      },
+      Message: messageBody,
+      PhoneNumber: ENV.AWS_SNS_TO_PHONE_NUMBER
     });
 
     const response = await sns.send(command);

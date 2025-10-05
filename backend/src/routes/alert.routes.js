@@ -4,7 +4,8 @@ import asyncHandler from "express-async-handler";
 import cloudinary from "../config/cloudinary.config.js";
 import { upload } from "../middleware/upload.middleware.js";
 import { Alert } from "../models/Alert.model.js";
-import { sendEmergencySMS } from "../lib/twilio.sendSMS.js";
+import { uploadToAzure } from "../config/azureblob.config.js";
+import { sendEmergencySMS } from "../config/sns.config.js";
 
 const router = Router();
 
@@ -24,26 +25,20 @@ router.post(
     }
 
     if (!latitude || !longitude) {
-      return res.status(400).json({ 
-        message: "Location (latitude and longitude) is required" 
+      return res.status(400).json({
+        message: "Location (latitude and longitude) is required",
       });
     }
 
-    let audioUrl = "";
-
+    let url, blobName;
     try {
-      // Upload audio to Cloudinary
-      const base64Audio = `data:${audioFile.mimetype};base64,${audioFile.buffer.toString("base64")}`;
-
-      const uploadResponse = await cloudinary.uploader.upload(base64Audio, {
-        folder: "Usalama_wangu_emergency_audio",
-        resource_type: "video",
-      });
-
-      audioUrl = uploadResponse.secure_url;
-      console.log("Audio uploaded:", audioUrl);
+      ({ url, blobName } = await uploadToAzure(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype
+      ));
     } catch (error) {
-      console.error("Cloudinary audio upload error:", error);
+      console.error("Azure audio upload error:", error);
       return res.status(500).json({ error: "Failed to upload audio" });
     }
 
@@ -55,7 +50,7 @@ router.post(
         address,
         accuracy: accuracy ? parseFloat(accuracy) : null,
       },
-      audioUrl,
+      audioUrl: url,
       notifiedContacts: [],
       deliveredToAuthorities: false,
     });
@@ -69,7 +64,7 @@ router.post(
         latitude,
         longitude,
         address,
-        audioUrl
+        url
       );
 
       // Update alert with notified contacts
@@ -77,16 +72,19 @@ router.post(
       alert.deliveredToAuthorities = true;
       await alert.save();
 
-      console.log("Emergency SMS sent successfully");
+      console.log("Emergency SMS sent successfully via SNS");
     } catch (smsError) {
-      console.error("Failed to send SMS, but alert was saved:", smsError.message);
+      console.error(
+        "Failed to send SMS, but alert was saved:",
+        smsError.message
+      );
       // Don't fail the request if SMS fails - alert is still saved
     }
 
-    res.status(201).json({ 
+    res.status(201).json({
       success: true,
       alert,
-      message: "Emergency alert created and notifications sent"
+      message: "Emergency alert created and notifications sent",
     });
   })
 );
