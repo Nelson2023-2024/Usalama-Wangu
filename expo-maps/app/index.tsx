@@ -26,7 +26,12 @@ interface Zone {
 // ---------- Zone configs ----------
 const ZONE_CONFIGS: Record<
   ZoneType,
-  { fillColor: string; strokeColor: string; strokeWidth: number; shouldBlink: boolean }
+  {
+    fillColor: string;
+    strokeColor: string;
+    strokeWidth: number;
+    shouldBlink: boolean;
+  }
 > = {
   extremely_dangerous: {
     fillColor: "rgba(255, 0, 0, 0.3)",
@@ -67,10 +72,13 @@ const ZONE_CONFIGS: Record<
 };
 
 export default function App() {
-  const [location, setLocation] = useState<Location.LocationObjectCoords | null>(null);
+  const [location, setLocation] =
+    useState<Location.LocationObjectCoords | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
   const [loadingZones, setLoadingZones] = useState(true);
-  const [blinkingZones, setBlinkingZones] = useState<Record<number, boolean>>({});
+  const [blinkingZones, setBlinkingZones] = useState<Record<number, boolean>>(
+    {}
+  );
 
   // ---------- Fetch zones from backend ----------
   useEffect(() => {
@@ -138,7 +146,9 @@ export default function App() {
   const formatTimeAgo = (timestamp: string) => {
     const now = new Date();
     const incidentDate = new Date(timestamp);
-    const diffInMinutes = Math.floor((now.getTime() - incidentDate.getTime()) / (1000 * 60));
+    const diffInMinutes = Math.floor(
+      (now.getTime() - incidentDate.getTime()) / (1000 * 60)
+    );
 
     if (diffInMinutes < 60) {
       return `${diffInMinutes} minutes ago`;

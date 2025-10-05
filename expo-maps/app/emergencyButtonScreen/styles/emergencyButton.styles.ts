@@ -295,4 +295,10 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
+  shakeInfo: {
+  marginTop: 10,
+  fontSize: 14,
+  color: "#666",
+  textAlign: "center",
+},
 });

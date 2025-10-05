@@ -73,9 +73,9 @@ export const useEmergencyAlert = () => {
       // Send to backend
       const response = await fetch("http://192.168.0.101:4000/api/alert/", {
         method: "POST",
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        // headers: {
+        //   'Content-Type': 'multipart/form-data',
+        // },
         body: formData,
       });
 
