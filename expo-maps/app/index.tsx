@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { StyleSheet, View, ActivityIndicator, Text } from "react-native";
 import MapView, { Circle, Marker } from "react-native-maps";
 import * as Location from "expo-location";
+import { MapLegend } from "./components/MapLegend";
 
 // ---------- Types ----------
 type ZoneType =
@@ -329,6 +330,7 @@ export default function App() {
         {zones.map(renderSafetyZone)}
         {zones.map(renderZoneMarker)}
       </MapView>
+      <MapLegend/>
     </View>
   );
 }
