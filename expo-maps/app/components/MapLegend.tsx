@@ -20,8 +20,7 @@ export const MapLegend = () => {
       iconBg: "#FF0000",
       color: "#FF0000",
       title: "Extremely Dangerous",
-      description: "Active violent incidents (blinking)",
-      shape: "circle",
+      description: "Active violent incidents",
       shouldBlink: true,
     },
     {
@@ -30,7 +29,6 @@ export const MapLegend = () => {
       color: "#DC1414",
       title: "Dangerous Zone",
       description: "Recent crime reports",
-      shape: "circle",
       shouldBlink: false,
     },
     {
@@ -39,7 +37,6 @@ export const MapLegend = () => {
       color: "#FFA500",
       title: "Relatively Unsafe",
       description: "Past security incidents",
-      shape: "circle",
       shouldBlink: false,
     },
     {
@@ -47,8 +44,7 @@ export const MapLegend = () => {
       iconBg: "#8B4513",
       color: "#8B4513",
       title: "Accident Hotspot",
-      description: "Frequent traffic accidents",
-      shape: "circle",
+      description: "Traffic accidents",
       shouldBlink: false,
     },
     {
@@ -56,8 +52,7 @@ export const MapLegend = () => {
       iconBg: "#008000",
       color: "#008000",
       title: "Wildlife Danger",
-      description: "Animal attack reports (blinking)",
-      shape: "circle",
+      description: "Animal attacks",
       shouldBlink: true,
     },
     {
@@ -65,8 +60,39 @@ export const MapLegend = () => {
       iconBg: "#0000FF",
       color: "#0000FF",
       title: "Aquatic Danger",
-      description: "Water-related hazards (blinking)",
-      shape: "circle",
+      description: "Water hazards",
+      shouldBlink: true,
+    },
+    {
+      icon: "💧",
+      iconBg: "#8A2BE2",
+      color: "#8A2BE2",
+      title: "Cholera Outbreak",
+      description: "Waterborne disease",
+      shouldBlink: true,
+    },
+    {
+      icon: "🦟",
+      iconBg: "#FFD700",
+      color: "#FFD700",
+      title: "Malaria Alert",
+      description: "Mosquito zone",
+      shouldBlink: true,
+    },
+    {
+      icon: "🫁",
+      iconBg: "#FF1493",
+      color: "#FF1493",
+      title: "Tuberculosis",
+      description: "TB outbreak area",
+      shouldBlink: false,
+    },
+    {
+      icon: "🤒",
+      iconBg: "#FF69B4",
+      color: "#FF69B4",
+      title: "Measles",
+      description: "Measles outbreak",
       shouldBlink: true,
     },
   ];
@@ -84,7 +110,10 @@ export const MapLegend = () => {
             {isExpanded ? "▼" : "►"} Map Legend
           </Text>
           <View style={styles.statusIndicator}>
-            <View style={styles.blinkingDot} />
+            <View style={[
+              styles.blinkingDot,
+              { opacity: isBlinking ? 1 : 0.3 }
+            ]} />
             <Text style={styles.statusText}>Live</Text>
           </View>
         </View>
@@ -106,7 +135,8 @@ export const MapLegend = () => {
                       styles.legendIconContainer,
                       { 
                         backgroundColor: isCurrentlyBlinking ? "#FF0000" : item.iconBg,
-                        opacity: isCurrentlyBlinking ? 1 : 1,
+                        borderWidth: isCurrentlyBlinking ? 3 : 2,
+                        borderColor: isCurrentlyBlinking ? "#FF0000" : "#FFFFFF",
                       },
                     ]}
                   >
@@ -115,7 +145,14 @@ export const MapLegend = () => {
 
                   {/* Text Info */}
                   <View style={styles.legendTextContainer}>
-                    <Text style={styles.legendItemTitle}>{item.title}</Text>
+                    <View style={styles.titleRow}>
+                      <Text style={styles.legendItemTitle}>{item.title}</Text>
+                      {item.shouldBlink && (
+                        <View style={styles.blinkBadge}>
+                          <Text style={styles.blinkBadgeText}>⚡</Text>
+                        </View>
+                      )}
+                    </View>
                     <Text style={styles.legendItemDescription}>
                       {item.description}
                     </Text>
@@ -130,6 +167,7 @@ export const MapLegend = () => {
                         backgroundColor: isCurrentlyBlinking 
                           ? "rgba(255, 0, 0, 0.6)" 
                           : `${item.color}40`,
+                        borderWidth: isCurrentlyBlinking ? 3 : 2,
                       },
                     ]}
                   />
@@ -141,10 +179,10 @@ export const MapLegend = () => {
           {/* Footer Info */}
           <View style={styles.legendFooter}>
             <Text style={styles.footerText}>
-              💡 Tap any marker for details
+              💡 Tap markers for details
             </Text>
             <Text style={styles.footerText}>
-              ⚡ Blinking zones = Active threat
+              ⚡ = Active/Blinking zone
             </Text>
           </View>
         </ScrollView>
@@ -166,6 +204,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
     maxWidth: 280,
+    minWidth: 20,
     borderWidth: 1,
     borderColor: "rgba(0, 0, 0, 0.1)",
   },
@@ -203,7 +242,7 @@ const styles = StyleSheet.create({
     color: "#FF0000",
   },
   legendContent: {
-    maxHeight: 400,
+    maxHeight: 450,
     borderTopWidth: 1,
     borderTopColor: "rgba(0, 0, 0, 0.1)",
   },
@@ -213,8 +252,8 @@ const styles = StyleSheet.create({
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 14,
-    paddingBottom: 12,
+    marginBottom: 12,
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0, 0, 0, 0.05)",
   },
@@ -225,8 +264,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
@@ -242,22 +279,37 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 3,
+    flexWrap: "wrap",
+  },
   legendItemTitle: {
     fontSize: 13,
     fontWeight: "700",
     color: "#1a1a1a",
-    marginBottom: 2,
+    marginRight: 4,
+  },
+  blinkBadge: {
+    backgroundColor: "#FF0000",
+    borderRadius: 8,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  blinkBadgeText: {
+    fontSize: 10,
+    color: "#FFFFFF",
   },
   legendItemDescription: {
     fontSize: 11,
     color: "#666",
-    lineHeight: 14,
+    lineHeight: 15,
   },
   colorIndicator: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    borderWidth: 2,
   },
   legendFooter: {
     padding: 12,

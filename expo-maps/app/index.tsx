@@ -11,7 +11,11 @@ type ZoneType =
   | "relatively_unsafe"
   | "accident_zone"
   | "wildlife_danger"
-  | "aquatic_danger";
+  | "aquatic_danger"
+  | "disease_cholera"
+  | "disease_malaria"
+  | "disease_tb"
+  | "disease_measles";
 
 interface Zone {
   id: number;
@@ -32,6 +36,7 @@ const ZONE_CONFIGS: Record<
     strokeColor: string;
     strokeWidth: number;
     shouldBlink: boolean;
+    markerEmoji?: string;
   }
 > = {
   extremely_dangerous: {
@@ -63,12 +68,42 @@ const ZONE_CONFIGS: Record<
     strokeColor: "#008000",
     strokeWidth: 2,
     shouldBlink: true,
+    markerEmoji: "🦁",
   },
   aquatic_danger: {
     fillColor: "rgba(0, 0, 255, 0.2)",
     strokeColor: "#0000FF",
     strokeWidth: 2,
     shouldBlink: true,
+    markerEmoji: "🐊",
+  },
+  disease_cholera: {
+    fillColor: "rgba(138, 43, 226, 0.25)",
+    strokeColor: "#8A2BE2",
+    strokeWidth: 2,
+    shouldBlink: true,
+    markerEmoji: "💧",
+  },
+  disease_malaria: {
+    fillColor: "rgba(255, 215, 0, 0.25)",
+    strokeColor: "#FFD700",
+    strokeWidth: 2,
+    shouldBlink: true,
+    markerEmoji: "🦟",
+  },
+  disease_tb: {
+    fillColor: "rgba(255, 20, 147, 0.25)",
+    strokeColor: "#FF1493",
+    strokeWidth: 2,
+    shouldBlink: false,
+    markerEmoji: "🫁",
+  },
+  disease_measles: {
+    fillColor: "rgba(255, 105, 180, 0.25)",
+    strokeColor: "#FF69B4",
+    strokeWidth: 2,
+    shouldBlink: true,
+    markerEmoji: "🤒",
   },
 };
 
@@ -188,8 +223,33 @@ export default function App() {
   const renderZoneMarker = (zone: Zone) => {
     const timeAgo = formatTimeAgo(zone.timestamp);
     const descriptionWithTime = `${zone.description}\nReported: ${timeAgo}`;
+    const config = ZONE_CONFIGS[zone.type];
 
-    // Special markers for specific zone types
+    // Handle disease zones with emojis
+    if (config?.markerEmoji && zone.type.startsWith("disease_")) {
+      return (
+        <Marker
+          key={`marker-${zone.id}`}
+          coordinate={{
+            latitude: zone.latitude,
+            longitude: zone.longitude,
+          }}
+          title={zone.title}
+          description={descriptionWithTime}
+        >
+          <View style={styles.diseaseMarker}>
+            <View style={[
+              styles.diseaseIcon,
+              { backgroundColor: config.strokeColor }
+            ]}>
+              <Text style={styles.diseaseEmoji}>{config.markerEmoji}</Text>
+            </View>
+          </View>
+        </Marker>
+      );
+    }
+
+    // Accident zone marker
     if (zone.type === "accident_zone") {
       return (
         <Marker
@@ -210,6 +270,7 @@ export default function App() {
       );
     }
 
+    // Wildlife danger marker
     if (zone.type === "wildlife_danger") {
       return (
         <Marker
@@ -226,6 +287,7 @@ export default function App() {
       );
     }
 
+    // Aquatic danger marker
     if (zone.type === "aquatic_danger") {
       return (
         <Marker
@@ -303,7 +365,7 @@ export default function App() {
       );
     }
 
-    // Fallback to default marker (shouldn't reach here with current zone types)
+    // Fallback to default marker
     return (
       <Marker
         key={`marker-${zone.id}`}
@@ -369,7 +431,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
   },
-  // New styles for exclamation mark markers
   exclamationMarker: {
     alignItems: "center",
     justifyContent: "center",
@@ -389,13 +450,13 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   redExclamation: {
-    backgroundColor: "#FF0000", // Bright red for extremely dangerous
+    backgroundColor: "#FF0000",
   },
   darkRedExclamation: {
-    backgroundColor: "#DC1414", // Dark red for dangerous
+    backgroundColor: "#DC1414",
   },
   orangeExclamation: {
-    backgroundColor: "#FFA500", // Orange for relatively unsafe
+    backgroundColor: "#FFA500",
   },
   exclamationText: {
     fontSize: 24,
@@ -404,5 +465,26 @@ const styles = StyleSheet.create({
     textShadowColor: "#000",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+  },
+  diseaseMarker: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  diseaseIcon: {
+    borderRadius: 25,
+    width: 45,
+    height: 45,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    elevation: 8,
+  },
+  diseaseEmoji: {
+    fontSize: 22,
   },
 });
