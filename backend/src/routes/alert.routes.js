@@ -6,6 +6,7 @@ import { upload } from "../middleware/upload.middleware.js";
 import { Alert } from "../models/Alert.model.js";
 import { uploadToAzure } from "../config/azureblob.config.js";
 import { sendEmergencySMS } from "../config/sns.config.js";
+import { sendEmergencyEmail } from "../config/email.config.js";
 
 const router = Router();
 
@@ -57,9 +58,9 @@ router.post(
 
     console.log("Alert created:", alert._id);
 
-    // Send emergency SMS
+    // Send emergency email
     try {
-      const smsRecord = await sendEmergencySMS(
+      const emailRecord = await sendEmergencyEmail(
         alert._id,
         latitude,
         longitude,
@@ -68,17 +69,17 @@ router.post(
       );
 
       // Update alert with notified contacts
-      alert.notifiedContacts.push(smsRecord.to);
+      alert.notifiedContacts.push(emailRecord.to);
       alert.deliveredToAuthorities = true;
       await alert.save();
 
-      console.log("Emergency SMS sent successfully via SNS");
-    } catch (smsError) {
+      console.log("Emergency email sent successfully via Gmail");
+    } catch (emailError) {
       console.error(
-        "Failed to send SMS, but alert was saved:",
-        smsError.message
+        "Failed to send email, but alert was saved:",
+        emailError.message
       );
-      // Don't fail the request if SMS fails - alert is still saved
+      // Don't fail the request if email fails - alert is still saved
     }
 
     res.status(201).json({

@@ -21,4 +21,6 @@ export const ENV = {
   SAS_TOKEN: process.env.SAS_TOKEN,
   STORAGE_ACCOUNT_NAME: process.env.STORAGE_ACCOUNT_NAME,
   CONTAINER_NAME: process.env.CONTAINER_NAME,
+  EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
+  EMAIL_USER: process.env.EMAIL_USER
 };
